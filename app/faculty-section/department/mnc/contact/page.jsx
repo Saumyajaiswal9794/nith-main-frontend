@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import './mnc_contact.css'
+import DepartmentContactView from '../../_components/DepartmentContactView'
 
 const menuItems = [
   { label: 'About Us', href: '/faculty-section/department/mnc' },
@@ -12,50 +12,26 @@ const menuItems = [
   { label: 'Contact', href: '/faculty-section/department/mnc/contact', active: true },
 ]
 
-export default function CseContactPage() {
+const fallbackContact = {
+  headName: 'Dr.Sunil',
+  designation: 'Head of Department',
+  departmentName: 'Mathematics and computing sciences',
+  instituteName: 'National Institute of Technology Hamirpur',
+  state: 'Himachal Pradesh',
+  pinCode: '177005',
+  phone: '01972- 254134',
+  hodEmail: 'head.msc@nith.ac.in',
+  officeEmail: 'office.msc@nith.ac.in',
+}
+
+export default function MncContactPage() {
   return (
-    <main className="cse-contact-page">
-      <div className="cse-contact-shell">
-        <aside className="cse-contact-sidebar" aria-label="Department navigation">
-          <nav>
-            {menuItems.map((item) => (
-              <Link
-                className={item.active ? 'active' : ''}
-                href={item.href}
-                key={item.label}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </aside>
-
-        <section className="cse-contact-content">
-          <div className="contact-card">
-            <h1>Contact Information</h1>
-
-            <address>
-              <strong>Dr.Sunil</strong>
-              <span>Head of Department</span>
-              <span>Mathematics and computing sciences</span>
-              <span>National Institute of Technology Hamirpur</span>
-              <span>Himachal Pradesh, Pin No. 177005, India.</span>
-            </address>
-
-            <div className="contact-details">
-              <p>
-                <strong>Phone No.:</strong>  01972- 254134
-              </p>
-              <p>
-                <strong>HoD Email:</strong> head.msc@nith.ac.in
-              </p>
-              <p>
-                <strong>Office Email:</strong> office.msc@nith.ac.in
-              </p>
-            </div>
-          </div>
-        </section>
-      </div>
-    </main>
+    <DepartmentContactView
+      departmentCode="mnc"
+      menuItems={menuItems}
+      pageClassName="cse-contact-page"
+      cssPrefix="cse"
+      fallbackContact={fallbackContact}
+    />
   )
 }

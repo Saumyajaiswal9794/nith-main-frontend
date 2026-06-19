@@ -147,36 +147,148 @@ const styles = {
   },
 }
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
+
+const iconMap = {
+  GraduationCap: GraduationCap,
+  BookOpen: BookOpen,
+  Network: Network,
+}
+
+const defaultInfo = {
+  title: 'Department of Mathematics & Scientific Computing',
+  description: 'The Department of Mathematics & Scientific Computing provides a strong foundation in computational mathematics, statistics, and scientific computing. It prepares students for careers in data science, software development, research, and academia.',
+}
+
+const defaultProgrammes = [
+  {
+    name: 'B.Tech.',
+    Icon: GraduationCap,
+    details:
+      'Undergraduate programme combining mathematics and computing.',
+  },
+  {
+    name: 'M.Sc.',
+    Icon: BookOpen,
+    details:
+      'Postgraduate programme in advanced mathematics and applications.',
+  },
+  {
+    name: 'Ph.D.',
+    Icon: Network,
+    details:
+      'Research in Mathematics and Statistics.',
+  },
+]
+
+const renderIcon = (iconInput) => {
+  if (!iconInput) return <GraduationCap size={24} strokeWidth={1.8} />;
+  
+  if (typeof iconInput !== 'string') {
+    const IconComponent = iconInput;
+    return <IconComponent size={24} strokeWidth={1.8} />;
+  }
+
+  const lookup = iconInput.trim().toLowerCase();
+  const matchedKey = Object.keys(iconMap).find(k => k.toLowerCase() === lookup);
+  if (matchedKey) {
+    const IconComponent = iconMap[matchedKey];
+    return <IconComponent size={24} strokeWidth={1.8} />;
+  }
+
+  return (
+    <span style={{ fontSize: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+      {iconInput}
+    </span>
+  );
+}
+
 function App() {
-  const [departmentData, setDepartmentData] = useState(null)
+  const [departmentInfo, setDepartmentInfo] = useState(defaultInfo)
+  const [programmesList, setProgrammesList] = useState(defaultProgrammes)
+  const [missionVisionData, setMissionVisionData] = useState(null)
+  const [researchAreasList, setResearchAreasList] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/department.xml')
-      .then((response) => response.text())
-      .then((xmlText) => {
-        const parser = new DOMParser()
-        const xml = parser.parseFromString(xmlText, 'text/xml')
+    let cancelled = false;
+    const loadData = async () => {
+      try {
+        // Fetch department info
+        try {
+          const res = await fetch(`${API_BASE}/v1/departments/mnc?language=en`, { cache: 'no-store' });
+          if (res.ok) {
+            const json = await res.json();
+            if (json?.data && !cancelled) {
+              setDepartmentInfo({
+                title: json.data.intro_heading || defaultInfo.title,
+                description: json.data.intro_description || defaultInfo.description,
+              });
+            }
+          }
+        } catch (e) {
+          console.error('Error fetching department info:', e);
+        }
 
-        const title = xml.querySelector('title')?.textContent || ''
+        // Fetch programmes
+        try {
+          const res = await fetch(`${API_BASE}/v1/departments/mnc/programmes?language=en`, { cache: 'no-store' });
+          if (res.ok) {
+            const json = await res.json();
+            if (Array.isArray(json?.data) && json.data.length > 0 && !cancelled) {
+              setProgrammesList(json.data.map(p => ({
+                name: p.title || p.programme_type,
+                icon: p.icon_emoji,
+                details: p.description,
+              })));
+            }
+          }
+        } catch (e) {
+          console.error('Error fetching programmes:', e);
+        }
 
-        const descriptions = [...xml.querySelectorAll('info description')]
-          .map((item) => item.textContent)
+        // Fetch mission & vision
+        try {
+          const res = await fetch(`${API_BASE}/v1/departments/mnc/mission-vision?language=en`, { cache: 'no-store' });
+          if (res.ok) {
+            const json = await res.json();
+            if (json?.data && !cancelled) {
+              setMissionVisionData(json.data);
+            }
+          }
+        } catch (e) {
+          console.error('Error fetching mission vision:', e);
+        }
 
-        const programmes = [...xml.querySelectorAll('programme')].map((item) => ({
-          name: item.querySelector('name')?.textContent || '',
-          icon: item.querySelector('icon')?.textContent || '',
-          details: item.querySelector('details')?.textContent || '',
-        }))
+        // Fetch research areas
+        try {
+          const res = await fetch(`${API_BASE}/v1/departments/mnc/research-areas?language=en`, { cache: 'no-store' });
+          if (res.ok) {
+            const json = await res.json();
+            if (Array.isArray(json?.data) && json.data.length > 0 && !cancelled) {
+              setResearchAreasList(json.data);
+            }
+          }
+        } catch (e) {
+          console.error('Error fetching research areas:', e);
+        }
 
-        setDepartmentData({
-          title,
-          descriptions,
-          programmes,
-        })
-      })
-  }, [])
+      } catch (err) {
+        console.error('Failed to load department data from API:', err);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
 
-  if (!departmentData) {
+    loadData();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
     return (
       <h2 style={{ padding: '2rem', color: '#333' }}>
         Loading...
@@ -225,7 +337,7 @@ function App() {
         <div style={styles.contentBox}>
 
           <h1 style={styles.pageTitle}>
-            {departmentData.title}
+            {departmentInfo.title}
           </h1>
 
           {/* Department Image */}
@@ -256,13 +368,13 @@ function App() {
               marginBottom: '30px',
             }}
           >
-            {academicProgrammes.map((programme) => (
+            {programmesList.map((programme) => (
               <div
                 key={programme.name}
                 style={styles.programmeCard}
               >
                 <span style={styles.programmeIcon}>
-                  <programme.Icon size={24} strokeWidth={1.8} />
+                  {renderIcon(programme.icon || programme.Icon)}
                 </span>
 
                 <h3 style={styles.programmeName}>
@@ -277,7 +389,7 @@ function App() {
           </div>
 
           {/* Description */}
-          {departmentData.descriptions.map((text, index) => (
+          {departmentInfo.description.split('\n').filter(Boolean).map((text, index) => (
             <p key={index} style={styles.descriptionText}>
               {text}
             </p>

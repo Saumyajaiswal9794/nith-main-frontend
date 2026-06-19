@@ -240,36 +240,193 @@ const styles = {
   },
 }
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
+
+const iconMap = {
+  GraduationCap: GraduationCap,
+  BookOpen: BookOpen,
+  Microscope: Microscope,
+  Network: Network,
+}
+
+const defaultInfo = {
+  title: 'Department of Computer Science & Engineering',
+  description: 'The Department of Computer Science and Engineering at NIT Hamirpur was established in 1989. It offers B.Tech., Dual Degree (B.Tech. & M.Tech.), M.Tech., and Ph.D. programmes. The department has well-equipped laboratories, state-of-the-art infrastructure, and qualified faculty members. It focuses on research and development, innovation, and academic excellence in computing sciences.',
+}
+
+const defaultProgrammes = [
+  {
+    name: 'B.Tech',
+    Icon: GraduationCap,
+    details:
+      'Four-year undergraduate programme focusing on core foundations and emerging tech trends.',
+  },
+  {
+    name: 'Dual Degree',
+    Icon: BookOpen,
+    details:
+      'Integrated five-year B.Tech & M.Tech programme for accelerated specialization in CSE.',
+  },
+  {
+    name: 'M.Tech',
+    Icon: Microscope,
+    details:
+      'Postgraduate excellence in Computer Science and Information Security domains.',
+  },
+  {
+    name: 'Ph.D',
+    Icon: Network,
+    details:
+      'Advanced doctoral research programs pushing the boundaries of computing science.',
+  },
+]
+
+const defaultMissionVision = {
+  heading: 'Mission & Cognitive Development',
+  description: 'Our programs are designed to transcend mere technical instruction. We focus on the holistic development of our students, nurturing cognitive abilities that allow for complex problem-solving and ethical decision-making in the digital age.',
+  points: [
+    'Critical thinking and analytical reasoning skills.',
+    'Interdisciplinary research opportunities.',
+    'Industry-aligned curriculum with regular updates.'
+  ]
+}
+
+const defaultResearchAreas = [
+  {
+    category: 'AI & ML',
+    details: 'Research in machine learning and intelligent systems.'
+  },
+  {
+    category: 'Cyber Security',
+    details: 'Advanced security protocols and privacy systems.'
+  },
+  {
+    category: 'Cloud Computing',
+    details: 'Distributed systems and scalable computing research.'
+  },
+  {
+    category: 'IoT & Robotics',
+    details: 'Smart devices and hardware-software integration.'
+  }
+]
+
+const renderIcon = (iconInput) => {
+  if (!iconInput) return <GraduationCap size={24} strokeWidth={1.8} />;
+  
+  if (typeof iconInput !== 'string') {
+    const IconComponent = iconInput;
+    return <IconComponent size={24} strokeWidth={1.8} />;
+  }
+
+  const lookup = iconInput.trim().toLowerCase();
+  const matchedKey = Object.keys(iconMap).find(k => k.toLowerCase() === lookup);
+  if (matchedKey) {
+    const IconComponent = iconMap[matchedKey];
+    return <IconComponent size={24} strokeWidth={1.8} />;
+  }
+
+  return (
+    <span style={{ fontSize: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+      {iconInput}
+    </span>
+  );
+}
+
 function App() {
-  const [departmentData, setDepartmentData] = useState(null)
+  const [departmentInfo, setDepartmentInfo] = useState(defaultInfo)
+  const [programmesList, setProgrammesList] = useState(defaultProgrammes)
+  const [missionVisionData, setMissionVisionData] = useState(defaultMissionVision)
+  const [researchAreasList, setResearchAreasList] = useState(defaultResearchAreas)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/department.xml')
-      .then((response) => response.text())
-      .then((xmlText) => {
-        const parser = new DOMParser()
-        const xml = parser.parseFromString(xmlText, 'text/xml')
+    let cancelled = false;
+    const loadData = async () => {
+      try {
+        // Fetch department info
+        try {
+          const res = await fetch(`${API_BASE}/v1/departments/cse?language=en`, { cache: 'no-store' });
+          if (res.ok) {
+            const json = await res.json();
+            if (json?.data && !cancelled) {
+              setDepartmentInfo({
+                title: json.data.intro_heading || defaultInfo.title,
+                description: json.data.intro_description || defaultInfo.description,
+              });
+            }
+          }
+        } catch (e) {
+          console.error('Error fetching department info:', e);
+        }
 
-        const title = xml.querySelector('title')?.textContent || ''
+        // Fetch programmes
+        try {
+          const res = await fetch(`${API_BASE}/v1/departments/cse/programmes?language=en`, { cache: 'no-store' });
+          if (res.ok) {
+            const json = await res.json();
+            if (Array.isArray(json?.data) && json.data.length > 0 && !cancelled) {
+              setProgrammesList(json.data.map(p => ({
+                name: p.title || p.programme_type,
+                icon: p.icon_emoji,
+                details: p.description,
+              })));
+            }
+          }
+        } catch (e) {
+          console.error('Error fetching programmes:', e);
+        }
 
-        const descriptions = [...xml.querySelectorAll('info description')]
-          .map((item) => item.textContent)
+        // Fetch mission & vision
+        try {
+          const res = await fetch(`${API_BASE}/v1/departments/cse/mission-vision?language=en`, { cache: 'no-store' });
+          if (res.ok) {
+            const json = await res.json();
+            if (json?.data && !cancelled) {
+              setMissionVisionData({
+                heading: json.data.mission_heading || defaultMissionVision.heading,
+                description: json.data.mission_description || defaultMissionVision.description,
+                points: Array.isArray(json.data.mission_points) && json.data.mission_points.length > 0
+                  ? json.data.mission_points
+                  : defaultMissionVision.points,
+              });
+            }
+          }
+        } catch (e) {
+          console.error('Error fetching mission vision:', e);
+        }
 
-        const programmes = [...xml.querySelectorAll('programme')].map((item) => ({
-          name: item.querySelector('name')?.textContent || '',
-          icon: item.querySelector('icon')?.textContent || '',
-          details: item.querySelector('details')?.textContent || '',
-        }))
+        // Fetch research areas
+        try {
+          const res = await fetch(`${API_BASE}/v1/departments/cse/research-areas?language=en`, { cache: 'no-store' });
+          if (res.ok) {
+            const json = await res.json();
+            if (Array.isArray(json?.data) && json.data.length > 0 && !cancelled) {
+              setResearchAreasList(json.data.map(r => ({
+                category: r.area_name,
+                details: r.description,
+              })));
+            }
+          }
+        } catch (e) {
+          console.error('Error fetching research areas:', e);
+        }
 
-        setDepartmentData({
-          title,
-          descriptions,
-          programmes,
-        })
-      })
-  }, [])
+      } catch (err) {
+        console.error('Failed to load department data from API:', err);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
 
-  if (!departmentData) {
+    loadData();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
     return (
       <h2 style={{ padding: '2rem', color: '#333' }}>
         Loading...
@@ -318,7 +475,7 @@ function App() {
         <div style={styles.contentBox}>
 
           <h1 style={styles.pageTitle}>
-            {departmentData.title}
+            {departmentInfo.title}
           </h1>
 
           {/* Image Placeholder */}
@@ -340,13 +497,13 @@ function App() {
               marginBottom: '30px',
             }}
           >
-            {academicProgrammes.map((programme) => (
+            {programmesList.map((programme) => (
               <div
                 key={programme.name}
                 style={styles.programmeCard}
               >
                 <span style={styles.programmeIcon}>
-                  <programme.Icon size={24} strokeWidth={1.8} />
+                  {renderIcon(programme.icon || programme.Icon)}
                 </span>
 
                 <h3 style={styles.programmeName}>
@@ -361,7 +518,7 @@ function App() {
           </div>
 
           {/* Description */}
-          {departmentData.descriptions.map((text, index) => (
+          {departmentInfo.description.split('\n').filter(Boolean).map((text, index) => (
             <p key={index} style={styles.descriptionText}>
               {text}
             </p>
@@ -373,32 +530,19 @@ function App() {
             {/* Mission */}
             <div>
               <h2 style={styles.missionTitle}>
-                Mission &amp;
-                <br />
-                Cognitive
-                <br />
-                Development
+                {missionVisionData.heading}
               </h2>
 
               <p style={styles.missionText}>
-                Our programs are designed to transcend mere technical instruction.
-                We focus on the holistic development of our students, nurturing cognitive
-                abilities that allow for complex problem-solving and ethical decision-making
-                in the digital age.
+                {missionVisionData.description}
               </p>
 
               <ul style={styles.missionList}>
-                <li style={styles.missionListItem}>
-                  Critical thinking and analytical reasoning skills.
-                </li>
-
-                <li style={styles.missionListItem}>
-                  Interdisciplinary research opportunities.
-                </li>
-
-                <li style={styles.missionListItem}>
-                  Industry-aligned curriculum with regular updates.
-                </li>
+                {missionVisionData.points.map((point, index) => (
+                  <li key={index} style={styles.missionListItem}>
+                    {point}
+                  </li>
+                ))}
               </ul>
             </div>
 
@@ -408,51 +552,21 @@ function App() {
               <h2 style={styles.researchTitle}>
                 Explore Research
                 <br />
-                Publications
+                Areas
               </h2>
 
               <div style={styles.researchGrid}>
+                {researchAreasList.map((area, idx) => (
+                  <div key={idx}>
+                    <span style={styles.researchCategory}>
+                      {area.category}
+                    </span>
 
-                <div>
-                  <span style={styles.researchCategory}>
-                    AI &amp; ML
-                  </span>
-
-                  <p style={styles.researchDesc}>
-                    Research in machine learning and intelligent systems.
-                  </p>
-                </div>
-
-                <div>
-                  <span style={styles.researchCategory}>
-                    Cyber Security
-                  </span>
-
-                  <p style={styles.researchDesc}>
-                    Advanced security protocols and privacy systems.
-                  </p>
-                </div>
-
-                <div>
-                  <span style={styles.researchCategory}>
-                    Cloud Computing
-                  </span>
-
-                  <p style={styles.researchDesc}>
-                    Distributed systems and scalable computing research.
-                  </p>
-                </div>
-
-                <div>
-                  <span style={styles.researchCategory}>
-                    IoT &amp; Robotics
-                  </span>
-
-                  <p style={styles.researchDesc}>
-                    Smart devices and hardware-software integration.
-                  </p>
-                </div>
-
+                    <p style={styles.researchDesc}>
+                      {area.details}
+                    </p>
+                  </div>
+                ))}
               </div>
 
               <button style={styles.exploreBtn}>

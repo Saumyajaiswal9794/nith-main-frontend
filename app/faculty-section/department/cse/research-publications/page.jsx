@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import './cse_research.css'
+import DepartmentPublicationsView from '../../_components/DepartmentPublicationsView'
 
 const menuItems = [
   { label: 'About Us', href: '/faculty-section/department/cse' },
@@ -41,69 +41,12 @@ const publications = [
 
 export default function CseResearchPage() {
   return (
-    <main className="cse-research-page">
-      <div className="cse-research-shell">
-        <aside className="cse-research-sidebar" aria-label="Department navigation">
-          <nav>
-            {menuItems.map((item) => (
-              <Link
-                className={item.active ? 'active' : ''}
-                href={item.href}
-                key={item.label}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </aside>
-
-        <section className="cse-research-content">
-          <h1>Research Publications</h1>
-
-          <div className="research-table-wrapper">
-            <table className="research-table">
-              <thead>
-                <tr>
-                  <th>Year</th>
-                  <th>Author(s)</th>
-                  <th>Title & Vol. No.</th>
-                  <th>Journal Name</th>
-                  <th>
-                    Indexing (SCI) Web of<br />Science/Scopus
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {publications.map((pub, index) => (
-                  <tr key={index}>
-                    <td>{pub.year}</td>
-                    <td>{pub.authors}</td>
-                    <td>
-                      {pub.title.includes('DOI:') ? (
-                        <>
-                          {pub.title.split('DOI:')[0]}
-                          DOI:{' '}
-                          <a
-                            href={pub.title.split('DOI:')[1].trim()}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            {pub.title.split('DOI:')[1].trim()}
-                          </a>
-                        </>
-                      ) : (
-                        pub.title
-                      )}
-                    </td>
-                    <td>{pub.journal}</td>
-                    <td>{pub.indexing}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </div>
-    </main>
+    <DepartmentPublicationsView
+      departmentCode="cse"
+      menuItems={menuItems}
+      pageClassName="cse-research-page"
+      cssPrefix="cse"
+      fallbackPublications={publications}
+    />
   )
 }

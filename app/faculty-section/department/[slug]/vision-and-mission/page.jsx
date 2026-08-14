@@ -3,10 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useSelector } from 'react-redux'
-import Link from 'next/link'
-import { Loader2 } from 'lucide-react'
-
-const API_BASE = 'http://localhost:4000/departments'
+import { DeptSidebar, Loading, fetchDept, getMenuItems, pageStyles, mainStyle, contentBox, subHeading, bodyText, getBilingual } from '../dept-utils'
 
 export default function VisionMissionPage() {
   const params = useParams()
@@ -16,28 +13,14 @@ export default function VisionMissionPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!slug) return
-    fetch(`${API_BASE}/slug/${slug}`)
-      .then(res => res.json())
-      .then(json => {
-        if (json.success) {
-          const d = json.data
-          if (d.mission) {
-            if (typeof d.mission.mission_en === 'string') d.mission.mission_en = JSON.parse(d.mission.mission_en || '[]')
-            if (typeof d.mission.mission_hi === 'string') d.mission.mission_hi = JSON.parse(d.mission.mission_hi || '[]')
-          }
-          setDept(d)
-        }
-      })
-      .finally(() => setLoading(false))
+    fetchDept(slug).then(setDept).catch(() => {}).finally(() => setLoading(false))
   }, [slug])
 
-  const name = language === 'hi' && dept?.name_hi ? dept.name_hi : dept?.name_en
-  const mission = dept?.mission
-  const vision = language === 'hi' && mission?.vision_hi ? mission.vision_hi : (mission?.vision_en || '')
-  const missions = language === 'hi' && mission?.mission_hi?.length > 0 ? mission.mission_hi : (mission?.mission_en || [])
-
+  const name = language === 'hi' && dept?.name_hn ? dept.name_hn : dept?.name_en
   const menuItems = getMenuItems(slug, language)
+  const visions = dept?.visions
+  const vision = language === 'hi' && visions?.vision_hn ? visions.vision_hn : (visions?.vision_en || '')
+  const mission = language === 'hi' && visions?.mission_hn ? visions.mission_hn : (visions?.mission_en || '')
 
   if (loading) return <Loading />
 
@@ -48,63 +31,9 @@ export default function VisionMissionPage() {
         <div style={contentBox}>
           <h2 style={subHeading}>{language === 'hi' ? 'दृष्टि' : 'Vision'}</h2>
           <p style={bodyText}>{vision || (language === 'hi' ? 'अभी तक जोड़ा नहीं गया' : 'Not added yet')}</p>
-
           <h2 style={{ ...subHeading, marginTop: '32px' }}>{language === 'hi' ? 'मिशन' : 'Mission'}</h2>
-          {missions.length > 0 ? missions.map((m, i) => (
-            <p key={i} style={bodyText}>{m}</p>
-          )) : (
-            <p style={bodyText}>{language === 'hi' ? 'अभी तक जोड़ा नहीं गया' : 'Not added yet'}</p>
-          )}
+          <p style={bodyText}>{mission || (language === 'hi' ? 'अभी तक जोड़ा नहीं गया' : 'Not added yet')}</p>
         </div>
-      </div>
-    </div>
-  )
-}
-
-function getMenuItems(slug, language) {
-  return [
-    { label: language === 'hi' ? 'अवलोकन' : 'Overview', href: `/faculty-section/department/${slug}` },
-    { label: language === 'hi' ? 'दृष्टि और मिशन' : 'Vision & Mission', href: `/faculty-section/department/${slug}/vision-and-mission` },
-    { label: language === 'hi' ? 'कार्यक्रम' : 'Programmes', href: `/faculty-section/department/${slug}/programmes-offered` },
-    { label: language === 'hi' ? 'संकाय' : 'Faculty', href: `/faculty-section/department/${slug}/faculty` },
-    { label: language === 'hi' ? 'कर्मचारी' : 'Staff', href: `/faculty-section/department/${slug}/staff` },
-    { label: language === 'hi' ? 'प्रयोगशालाएं' : 'Labs', href: `/faculty-section/department/${slug}/labs` },
-    { label: language === 'hi' ? 'अनुसंधान' : 'Research', href: `/faculty-section/department/${slug}/research-publications` },
-    { label: language === 'hi' ? 'संपर्क' : 'Contact', href: `/faculty-section/department/${slug}/contact` },
-    { label: language === 'hi' ? 'मीडिया' : 'Media', href: `/faculty-section/department/${slug}/media` },
-  ]
-}
-
-const pageStyles = { display: 'flex', minHeight: '100vh', fontFamily: 'sans-serif', backgroundColor: '#f5f5f5' }
-const mainStyle = { flex: 1, padding: '24px 32px', backgroundColor: '#f5f5f5' }
-const contentBox = { backgroundColor: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }
-const subHeading = { fontSize: '18px', fontWeight: 'bold', color: '#8b0000', marginBottom: '12px', borderBottom: '2px solid #8b0000', paddingBottom: '8px' }
-const bodyText = { fontSize: '14px', lineHeight: '1.8', color: '#444', marginBottom: '12px' }
-
-function DeptSidebar({ name, code, items, activeIdx }) {
-  return (
-    <div style={{ width: '200px', minWidth: '200px', backgroundColor: '#fff', borderRight: '1px solid #ddd' }}>
-      <div style={{ padding: '16px', borderBottom: '1px solid #f0f0f0' }}>
-        <h3 style={{ margin: 0, fontSize: '14px', color: '#8b0000', fontWeight: 'bold' }}>{name}</h3>
-        <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#999' }}>{code?.toUpperCase()}</p>
-      </div>
-      {items.map((item, i) => (
-        <Link key={i} href={item.href} style={i === activeIdx
-          ? { backgroundColor: '#8b0000', color: '#fff', padding: '10px 16px', fontWeight: '600', fontSize: '14px', display: 'block', textDecoration: 'none' }
-          : { display: 'block', padding: '8px 16px', fontSize: '14px', color: '#c0392b', textDecoration: 'none', borderBottom: '1px solid #f0f0f0' }
-        }>
-          {item.label}
-        </Link>
-      ))}
-    </div>
-  )
-}
-
-function Loading() {
-  return (
-    <div style={pageStyles}>
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Loader2 className="animate-spin" size={32} color="#8b0000" />
       </div>
     </div>
   )

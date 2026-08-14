@@ -51,7 +51,7 @@ function Department() {
     }
     sectionMap[sKey].links.push({
       title: dept.name_en,
-      title2: dept.name_hi || dept.name_en,
+      title2: dept.name_hn || dept.name_en,
       href: `/faculty-section/department/${dept.slug}`,
     });
   });

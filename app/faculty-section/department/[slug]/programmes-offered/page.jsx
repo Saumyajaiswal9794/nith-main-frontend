@@ -16,10 +16,9 @@ export default function ProgrammesPage() {
     fetchDept(slug).then(setDept).catch(() => {}).finally(() => setLoading(false))
   }, [slug])
 
-  const name = language === 'hi' && dept?.name_hi ? dept.name_hi : dept?.name_en
+  const name = language === 'hi' && dept?.name_hn ? dept.name_hn : dept?.name_en
   const menuItems = getMenuItems(slug, language)
-  const progs = dept?.programmes
-  const programmes = language === 'hi' && progs?.programmes_hi?.length > 0 ? progs.programmes_hi : (progs?.programmes_en || [])
+  const progs = dept?.programmes || []
 
   if (loading) return <Loading />
 
@@ -29,14 +28,10 @@ export default function ProgrammesPage() {
       <div style={mainStyle}>
         <div style={contentBox}>
           <h2 style={subHeading}>{language === 'hi' ? 'प्रस्तावित कार्यक्रम' : 'Programmes Offered'}</h2>
-          {programmes.length === 0 && <p style={{ fontSize: '14px', color: '#999' }}>{language === 'hi' ? 'अभी तक जोड़ा नहीं गया' : 'No programmes added yet'}</p>}
-          {programmes.map((p, i) => (
-            <div key={i} style={{ padding: '16px', border: '1px solid #eee', borderRadius: '8px', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                <span style={{ fontSize: '24px' }}>{p.icon}</span>
-                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#333' }}>{p.name}</h3>
-              </div>
-              <p style={{ fontSize: '14px', color: '#555', lineHeight: '1.7', margin: 0 }}>{p.details}</p>
+          {progs.length === 0 && <p style={{ fontSize:'14px',color:'#999' }}>{language === 'hi' ? 'अभी तक जोड़ा नहीं गया' : 'No programmes added yet'}</p>}
+          {progs.map((p, i) => (
+            <div key={i} style={{ padding:'16px',border:'1px solid #eee',borderRadius:'8px',marginBottom:'12px' }}>
+              <h3 style={{ margin:'0 0 4px',fontSize:'16px',fontWeight:'bold',color:'#333' }}>{language === 'hi' && p.program_name_hn ? p.program_name_hn : p.program_name_en}</h3>
             </div>
           ))}
         </div>

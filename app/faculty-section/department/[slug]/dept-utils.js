@@ -13,7 +13,6 @@ export function getMenuItems(slug, language) {
     { label: language === 'hi' ? 'प्रयोगशालाएं' : 'Labs', href: `/faculty-section/department/${slug}/labs` },
     { label: language === 'hi' ? 'अनुसंधान' : 'Research', href: `/faculty-section/department/${slug}/research-publications` },
     { label: language === 'hi' ? 'संपर्क' : 'Contact', href: `/faculty-section/department/${slug}/contact` },
-    { label: language === 'hi' ? 'मीडिया' : 'Media', href: `/faculty-section/department/${slug}/media` },
   ]
 }
 
@@ -56,27 +55,14 @@ export async function fetchDept(slug) {
   const res = await fetch(`${API_BASE}/slug/${slug}`)
   const json = await res.json()
   if (!json.success) throw new Error('Not found')
-  const d = json.data
-  // Parse JSONB strings
-  ['descriptions_en','descriptions_hi'].forEach(k => {
-    if (d.overview && typeof d.overview[k] === 'string') d.overview[k] = JSON.parse(d.overview[k] || '[]')
-  })
-  ['programmes_en','programmes_hi'].forEach(k => {
-    if (d.programmes && typeof d.programmes[k] === 'string') d.programmes[k] = JSON.parse(d.programmes[k] || '[]')
-  })
-  ['categories_en','categories_hi','publications_en','publications_hi'].forEach(k => {
-    if (d.research && typeof d.research[k] === 'string') d.research[k] = JSON.parse(d.research[k] || '[]')
-  })
-  ['mission_en','mission_hi'].forEach(k => {
-    if (d.mission && typeof d.mission[k] === 'string') d.mission[k] = JSON.parse(d.mission[k] || '[]')
-  })
-  return d
+  return json.data
 }
 
+// Get bilingual value — uses _hn suffix (matching final.sql)
 export function getBilingual(obj, field, language) {
   if (!obj) return ''
-  const hiVal = obj[field + '_hi']
+  const hnVal = obj[field + '_hn']
   const enVal = obj[field + '_en']
-  if (language === 'hi' && hiVal) return hiVal
-  return enVal || hiVal || ''
+  if (language === 'hi' && hnVal) return hnVal
+  return enVal || hnVal || ''
 }
